@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Scoreboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .scoreboard {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .score-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .player {
+            text-align: center;
+            width: 45%;
+        }
+        .score {
+            font-size: 102px;
+            font-weight: bold;
+        }
+        .sets {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .name {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin: 5px;
+        }
+        .control-group label {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .controls input, .controls button {
+            margin: 5px;
+        }
+        .server-indicator {
+            text-align: center;
+            font-size: 32px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .instructions {
+            font-size: 14px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        #confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #winner-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: "blue";
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="scoreboard">
+        <div class="score-display">
+            <div class="player">
+                <input type="text" id="player1Name" value="Player 1" class="name">
+                <div id="player1Score" class="score">0</div>
+                <div id="player1Sets" class="sets">0</div>
+            </div>
+            <div class="player">
+                <input type="text" id="player2Name" value="Player 2" class="name">
+                <div id="player2Score" class="score">0</div>
+                <div id="player2Sets" class="sets">0</div>
+            </div>
+        </div>
+        <div class="server-indicator" id="serverIndicator">Player 1 to serve</div>
+        <div class="controls">
+            <div class="control-group">
+                <label for="servesPerPlayer">Serves per player:</label>
+                <input type="number" id="servesPerPlayer" value="2" min="1">
+            </div>
+            <div class="control-group">
+                <label for="maxPoints">Points to win set:</label>
+                <input type="number" id="maxPoints" value="11" min="1">
+            </div>
+            <div class="control-group">
+                <label for="setsToWin">Sets to win match:</label>
+                <input type="number" id="setsToWin" value="3" min="1">
+            </div>
+            <button onclick="swapPlayers()">Swap Players</button>
+            <button onclick="resetScores()">Reset Scores</button>
+        </div>
+        <div class="instructions">
+            <p>Keyboard controls:</p>
+            <p>Player 1: 'z' to increment, 'x' to decrement</p>
+            <p>Player 2: '/' to increment, '.' to decrement</p>
+        </div>
+    </div>
+    <div id="confetti-container">
+        <canvas id="confetti"></canvas>
+    </div>
+    <div id="winner-announcement"></div>
+    <script>
+        let player1Score = 0;
+        let player2Score = 0;
+        let player1Sets = 0;
+        let player2Sets = 0;
+        let servesPerPlayer = 2;
+        let maxPoints = 11;
+        let setsToWin = 3;
+        let currentServer = 1;
+        let serveCount = 0;
+
+        function updateScore(player, change) {
+            if (player === 1) {
+                player1Score = Math.max(0, player1Score + change);
+                document.getElementById('player1Score').textContent = player1Score;
+            } else {
+                player2Score = Math.max(0, player2Score + change);
+                document.getElementById('player2Score').textContent = player2Score;
+            }
+            updateServer();
+            checkSetWin();
+        }
+
+        function updateServer() {
+            serveCount++;
+            const totalScore = player1Score + player2Score;
+            
+            if (totalScore >= 2 * maxPoints - 2) {
+                // After reaching "deuce", alternate every serve
+                if (serveCount > 1) {
+                    currentServer = currentServer === 1 ? 2 : 1;
+                    serveCount = 1;
+                }
+            } else {
+                // Before reaching "deuce", change server after servesPerPlayer
+                if (serveCount > servesPerPlayer) {
+                    currentServer = currentServer === 1 ? 2 : 1;
+                    serveCount = 1;
+                }
+            }
+
+            document.getElementById('serverIndicator').textContent = 
+                `${document.getElementById('player' + currentServer + 'Name').value} to serve`;
+        }
+
+        function checkSetWin() {
+            if ((player1Score >= maxPoints || player2Score >= maxPoints) && 
+                Math.abs(player1Score - player2Score) >= 2) {
+                if (player1Score > player2Score) {
+                    player1Sets++;
+                    document.getElementById('player1Sets').textContent = player1Sets;
+                    currentServer = 1;
+                } else {
+                    player2Sets++;
+                    document.getElementById('player2Sets').textContent = player2Sets;
+                    currentServer = 2;
+                }
+                resetScoresForNewSet();
+                checkMatchWin();
+            }
+        }
+
+        function checkMatchWin() {
+            if (player1Sets >= setsToWin || player2Sets >= setsToWin) {
+                const winner = player1Sets > player2Sets ? 
+                    document.getElementById('player1Name').value : 
+                    document.getElementById('player2Name').value;
+                showWinnerAnnouncement(winner);
+                startConfetti();
+                setTimeout(() => {
+                    hideWinnerAnnouncement();
+                    stopConfetti();
+                }, 5000);
+            }
+        }
+
+        function showWinnerAnnouncement(winner) {
+            const announcement = document.getElementById('winner-announcement');
+            announcement.textContent = `${winner} wins the match!`;
+            announcement.style.display = 'block';
+        }
+
+        function hideWinnerAnnouncement() {
+            const announcement = document.getElementById('winner-announcement');
+            announcement.style.display = 'none';
+        }
+
+        function resetScoresForNewSet() {
+            player1Score = 0;
+            player2Score = 0;
+            document.getElementById('player1Score').textContent = '0';
+            document.getElementById('player2Score').textContent = '0';
+            serveCount = 0;
+            updateServer();
+        }
+
+        function swapPlayers() {
+            [player1Score, player2Score] = [player2Score, player1Score];
+            [player1Sets, player2Sets] = [player2Sets, player1Sets];
+            [document.getElementById('player1Score').textContent, 
+             document.getElementById('player2Score').textContent] = 
+            [player2Score, player1Score];
+            [document.getElementById('player1Sets').textContent, 
+             document.getElementById('player2Sets').textContent] = 
+            [player1Sets, player2Sets];
+            updateServer();
+        }
+
+        function resetScores() {
+            player1Score = 0;
+            player2Score = 0;
+            player1Sets = 0;
+            player2Sets = 0;
+            document.getElementById('player1Score').textContent = '0';
+            document.getElementById('player2Score').textContent = '0';
+            document.getElementById('player1Sets').textContent = '0';
+            document.getElementById('player2Sets').textContent = '0';
+            serveCount = 0;
+            currentServer = 1;
+            updateServer();
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'z': updateScore(1, 1); break;
+                case '/': updateScore(2, 1); break;
+                case 'x': updateScore(1, -1); break;
+                case '.': updateScore(2, -1); break;
+            }
+        });
+
+        document.getElementById('servesPerPlayer').addEventListener('change', function() {
+            servesPerPlayer = parseInt(this.value);
+            serveCount = 0;
+            updateServer();
+        });
+
+        document.getElementById('maxPoints').addEventListener('change', function() {
+            maxPoints = parseInt(this.value);
+        });
+
+        document.getElementById('setsToWin').addEventListener('change', function() {
+            setsToWin = parseInt(this.value);
+        });
+
+        // Confetti effect
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const pieces = [];
+        const numberOfPieces = 200;
+        let animationId = null;
+
+        function randomColor() {
+            const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            pieces.forEach((piece, i) => {
+                piece.y += piece.velocity.y;
+                piece.x += piece.velocity.x;
+                piece.velocity.y += 0.1;
+                piece.rotation += piece.rotationSpeed;
+
+                if (piece.y > canvas.height) {
+                    pieces.splice(i, 1);
+                }
+
+                ctx.save();
+                ctx.translate(piece.x, piece.y);
+                ctx.rotate(piece.rotation);
+                ctx.fillStyle = piece.color;
+                ctx.fillRect(-5, -5, 10, 10);
+                ctx.restore();
+            });
+
+            if (pieces.length < numberOfPieces) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    velocity: {
+                        x: (Math.random() - 0.5) * 3,
+                        y: Math.random() * 3 + 2
+                    },
+                    color: randomColor(),
+                    rotation: 0,
+                    rotationSpeed: (Math.random() - 0.5) * 0.2
+                });
+            }
+
+            animationId = requestAnimationFrame(update);
+        }
+
+        function startConfetti() {
+            if (!animationId) {
+                update();
+            }
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pieces.length = 0;
+        }
+    </script>
+</body>
+</html>
