@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ping Pong Scoreboard</title>
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -96,6 +97,8 @@
 </head>
 <body>
     <div class="scoreboard">
+    <center><h1>TT SCOREBOARD</h1></center>
+    <br>
         <div class="score-display">
             <div class="player">
                 <input type="text" id="player1Name" value="Player 1" class="name">
@@ -126,9 +129,12 @@
             <button onclick="resetScores()">Reset Scores</button>
         </div>
         <div class="instructions">
-            <p>Keyboard controls:</p>
+            <p><b>Keyboard controls:</b></p>
             <p>Player 1: 'z' to increment, 'x' to decrement</p>
             <p>Player 2: '/' to increment, '.' to decrement</p>
+            <p><b>Touch controls:</b></p>
+            <p>Touch Player 1 score to increment, Sets score to decrement</p>
+            <p>Touch Player 2 score to increment, Sets score to decrement</p>
         </div>
     </div>
     <div id="confetti-container">
@@ -256,7 +262,21 @@
             currentServer = 1;
             updateServer();
         }
-
+        
+        //touch events
+        document.getElementById("player1Score").addEventListener("touchstart", function(event){
+          updateScore(1, 1);
+        });
+        document.getElementById("player2Score").addEventListener("touchstart", function(event){
+          updateScore(2, 1);
+        });
+        document.getElementById("player1Sets").addEventListener("touchstart", function(event){
+          updateScore(1, -1);
+        });
+        document.getElementById("player2Sets").addEventListener("touchstart", function(event){
+          updateScore(2, -1);
+        });
+        
         document.addEventListener('keydown', function(event) {
             switch(event.key) {
                 case 'z': updateScore(1, 1); break;
